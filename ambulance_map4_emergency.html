@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Emergency Route</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+    }
+    html, body, #map {
+      height: 100%;
+      width: 100vw;
+    }
+  </style>
+</head>
+<body>
+  <h1>Emergency Position</h1>
+  <div id="map" style="width:100%;height:500px;"></div>
+
+  <script>
+    // Initialization of map
+    var map = L.map('map').fitWorld();
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // After accepting location from user
+    map.locate({setView: true, maxZoom: 16});
+
+    function onLocationFound(e) {
+      var radius = e.accuracy.toFixed(2); // Round to 2 decimal places
+
+      L.marker(e.latlng).addTo(map)
+        .bindPopup("You are within " + radius + " meters from this point").openPopup();
+
+      L.circle(e.latlng, radius).addTo(map);
+
+      // Fetch node data from OpenStreetMap API
+      const url = 'https://api.openstreetmap.org/api/0.6/node/1234567';
+      fetch(url)
+        .then(response => response.text())
+        .then(xml => {
+          // Parse the XML response and extract the node data
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xml, "text/xml");
+          const node = xmlDoc.getElementsByTagName("node")[0];
+          const lat = node.getAttribute("lat");
+          const lon = node.getAttribute("lon");
+
+          // Use the node data to display a marker on the map
+          L.marker([lat, lon]).addTo(map)
+            .bindPopup("Node Location")
+            .openPopup();
+        })
+        .catch(error => console.error(error));
+    }
+
+    map.on('locationfound', onLocationFound);
+
+    // If error in locating
+    function onLocationError(e) {
+      alert(e.message);
+    }
+
+    map.on('locationerror', onLocationError);
+  </script>
+</body>
+</html>
